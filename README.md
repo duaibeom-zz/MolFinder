@@ -1,4 +1,3 @@
-# MolFinder
 <!---
 Copyright 2021 Yong-beom Kwon and Ju-yong Lee. All rights reserved.
 -->
