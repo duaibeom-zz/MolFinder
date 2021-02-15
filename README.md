@@ -39,22 +39,27 @@ molfinder -i some_data
 
 ## Parameters of MolFinder
 * `-i, --input`: (`str`) SMILES file (csv format) used by the model
-* `-r, --random-seed`: (`int`) Determines the random number that selects the initial molecules
+* `-r, --random-seed`: (`int`, None) Determines the random number that selects the initial molecules
   
-* `--bank-size`: (`int`) Bank size used in the algorithm 
-* `--seed-size`: (`int`) The number of parent molecules used to generate child molecules
+* `--bank-size`: (`int`, 100) Bank size used in the algorithm 
+* `--seed-size`: (`int`, 60) The number of parent molecules used to generate child molecules
   
-* `-dist, --dist-coef`: (`float`) Adjust the $D_{avg}$ value
+* `-dist, --dist-coef`: (`float`, 0.90) Adjust the $D_{avg}$ value
 
-* `--max-round`: (`int`) The maximum number of round
-* `-cvg, --convergent-round`: (`int`) Determines how many rounds the Dcut will converge
+* `--max-round`: (`int`, 150) The maximum number of round
+* `-cvg, --convergent-round`: (`int`, 150) Determines how many rounds the Dcut will converge
   
-* `-c, --coefficient`: (`float`) Coefficient of objective function
-* `--target`: (`SMILES: str`) Target molecule 
+* `-c, --coefficient`: (`float`, 0.96) Coefficient of objective function
+* `--target`: (`SMILES: str`, None) Target molecule 
 
-* `-fp, --fp-method`: (`str`) Fingerprint method; Morgan or RDKit (default)
+* `-fp, --fp-method`: (`str`, rdkit) Fingerprint method; Morgan or RDKit (default)
 
 * `-v, --verbosity`: Print RDKit Error message.
+
+* Parameters of paper results
+```shell
+molfinder -r 12345678 --bank-size 1000 --seed-size 600 -dist 0.90 -c 0.994
+```
 
 ## Set objective fucntion
 

@@ -19,7 +19,7 @@ sys.path.append(os.path.join(RDConfig.RDContribDir, 'SA_Score'))
 
 import sascorer
 
-import ModSmi
+import ModSMI
 
 parser = argparse.ArgumentParser(
     description="This python script is made by Yongbeom Kwon")
@@ -35,7 +35,6 @@ parser.add_argument(
     metavar="N",
     type=int,
     default=100,
-    required=True,
     help="",
 )
 parser.add_argument(
@@ -43,22 +42,21 @@ parser.add_argument(
     metavar="N",
     type=int,
     default=60,
-    required=True,
     help="",
 )
 parser.add_argument(
     "--max-round",
     metavar="N",
     type=int,
-    required=True,
+    default=150,
     help="",
 )
 parser.add_argument(
     "-cvg",
     "--convergent-round",
     metavar="N",
+    default=150,
     type=int,
-    required=True,
     help=
     "Convergent round; It determines when D_cut reaches a minimum value. And also It decides diversity of molecules",
 )
@@ -167,7 +165,7 @@ if args.target:  # TARGET Molecule VESRSION
 else:
 
     def cal_features(_smi, _mol):  # set data_column
-        return [_smi, _mol, True, feature1a(_mol), feature2(_mol)]
+        return [_smi, _mol, True, feature1(_mol), feature2(_mol)]
 
     qed_coef = args.coefficient
     sas_coef = 1 - qed_coef
@@ -413,7 +411,7 @@ def crossover_smiles(smi1, smi2, func, ring_bool):
         if gate > 5:
             break
         try:
-            new_smi = ModSmi.tight_rm_branch(l_smi, r_smi)
+            new_smi = ModSMI.tight_rm_branch(l_smi, r_smi)
         except ValueError:
             continue
         mol = Chem.MolFromSmiles(new_smi)
@@ -427,7 +425,7 @@ def crossover_smiles(smi1, smi2, func, ring_bool):
             if gate > 5:
                 break
             try:
-                new_smi = ModSmi.tight_rm_branch(l_smi, r_smi)
+                new_smi = ModSMI.tight_rm_branch(l_smi, r_smi)
             except ValueError:
                 continue
             mol = Chem.MolFromSmiles(new_smi)
@@ -472,10 +470,10 @@ def prepare_child(seed,
 
                 if np.random.random() >= 0.5:
                     new_smi, mol = crossover_smiles(
-                        smi1, smi2, ModSmi.prepare_rigid_crossover, True)
+                        smi1, smi2, ModSMI.prepare_rigid_crossover, True)
                 else:
                     new_smi, mol = crossover_smiles(
-                        smi2, smi1, ModSmi.prepare_rigid_crossover, True)
+                        smi2, smi1, ModSMI.prepare_rigid_crossover, True)
 
                 if mol:
                     j += append_seed(new_smi, mol, update_solution)
@@ -497,10 +495,10 @@ def prepare_child(seed,
 
                 if np.random.random() >= 0.5:
                     new_smi, mol = crossover_smiles(
-                        smi1, smi2, ModSmi.prepare_rigid_crossover, False)
+                        smi1, smi2, ModSMI.prepare_rigid_crossover, False)
                 else:
                     new_smi, mol = crossover_smiles(
-                        smi2, smi1, ModSmi.prepare_rigid_crossover, False)
+                        smi2, smi1, ModSMI.prepare_rigid_crossover, False)
 
                 if mol:
                     j += append_seed(new_smi, mol, update_solution)
@@ -517,7 +515,7 @@ def prepare_child(seed,
                 print(f"#### have problems in updating solutions @{smi1}")
                 break
             try:
-                new_smi, mol = ModSmi.replace_atom(smi1)
+                new_smi, mol = ModSMI.replace_atom(smi1)
 
                 if mol:
                     j += append_seed(new_smi, mol, update_solution)
@@ -535,7 +533,7 @@ def prepare_child(seed,
                 print(f"#### have problems in updating solutions @{smi1}")
                 break
             try:
-                new_smi, mol = ModSmi.add_atom(smi1)
+                new_smi, mol = ModSMI.add_atom(smi1)
 
                 if mol:
                     j += append_seed(new_smi, mol, update_solution)
@@ -553,7 +551,7 @@ def prepare_child(seed,
                 print(f"#### have problems in updating solutions @{smi1}")
                 break
             try:
-                new_smi, mol = ModSmi.delete_atom(smi1)
+                new_smi, mol = ModSMI.delete_atom(smi1)
 
                 if mol:
                     j += append_seed(new_smi, mol, update_solution)
@@ -575,7 +573,7 @@ def prepare_local_child(_smi, nReplace=10, nAdd=10, nRemove=10):
             print(f"#### have problems in updating solutions @{_smi}")
             break
         try:
-            new_smi, mol = ModSmi.replace_atom(_smi)
+            new_smi, mol = ModSMI.replace_atom(_smi)
             if mol:
                 j += append_seed(new_smi, mol, update_solution)
         except (PermissionError, Chem.rdchem.KekulizeException):
@@ -591,7 +589,7 @@ def prepare_local_child(_smi, nReplace=10, nAdd=10, nRemove=10):
             print(f"#### have problems in updating solutions @{_smi}")
             break
         try:
-            new_smi, mol = ModSmi.add_atom(_smi)
+            new_smi, mol = ModSMI.add_atom(_smi)
             if mol:
                 j += append_seed(new_smi, mol, update_solution)
         except PermissionError:
@@ -607,7 +605,7 @@ def prepare_local_child(_smi, nReplace=10, nAdd=10, nRemove=10):
             print(f"#### have problems in updating solutions @{_smi}")
             break
         try:
-            new_smi, mol = ModSmi.delete_atom(_smi)
+            new_smi, mol = ModSMI.delete_atom(_smi)
             if mol:
                 j += append_seed(new_smi, mol, update_solution)
         except PermissionError:
