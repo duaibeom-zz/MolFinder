@@ -5,8 +5,6 @@ import random
 import itertools
 
 import numpy as np
-import pandas as pd
-from pandas.core.groupby.generic import NamedAgg
 
 from rdkit import Chem
 from rdkit.Chem import AllChem
@@ -401,6 +399,9 @@ if __name__ == "__main__":
 
     from multiprocessing import Pool
     import datetime
+    from rkdit import rdBase
+
+    rdBase.DisableLog('rdApp.*')
 
     _minimum_len = 4
 

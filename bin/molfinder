@@ -65,7 +65,7 @@ parser.add_argument(
     "--coefficient",
     metavar="Float",
     type=float,
-    default=0.994,
+    default=0.9,
     help="coefficient of reward function.",
 )
 parser.add_argument(
@@ -126,10 +126,17 @@ def get_fp(mol_or_smi):
 
 
 # -------------------------------------------------------- #
-# SET FEATURES ########################################### #
+"""
+@@FEATURES
+Features must return a number.
+1. Set nfeatures
+2. Add your functions
+"""
 
+# The number of features
 nfeatures = 2
 
+# Set your functions.
 feature1 = lambda x: sascorer.calculateScore(x)  # SAS
 feature1a = lambda x: 1 - (sascorer.calculateScore(x) - 1) / 9  # SAS
 feature2 = lambda x: QED.default(x)  # QED
@@ -149,33 +156,43 @@ def feature5(x):  # RingPenalty
 
 
 # SET REWARD function #################################### #
-
+"""
+@@REWARD
+Modify the cal_features function; Index 0, 1, and 2 are fixed.
+You need to put the desired features after index 3 of the returned list.
+Then modify obj_fn and column_name to suit your purpose.
+"""
 if args.target:  # TARGET Molecule VESRSION
 
+    # Modify the cal_features function; Index 0, 1, and 2 are fixed.
+    # You need to put the desired features after index 3 of the returned list.
     def cal_features(_smi, _mol):  # set data_column
         return [_smi, _mol, True, feature2(_mol), feature3(_mol)]
 
+    # Then modify obj_fn and column_name to suit your purpose.
     target_fps = get_fp(args.target)
     sim_coef = args.coefficient
     qed_coef = 1 - sim_coef
-    obj_eq = lambda x: sim_coef * x[:, 4] + qed_coef * x[:, 3]
+    obj_fn = lambda x: sim_coef * x[:, 4] + qed_coef * x[:, 3]
 
+    #            SMILES / feature1 / feature2 / obj_fn
     column_name = ["SMILES", "QED", "SIM", "TARGET"]
 
-else:
+else:  # Non-TARGET Molecule VESRSION
 
+    # Modify the cal_features function; Index 0, 1, and 2 are fixed.
+    # You need to put the desired features after index 3 of the returned list.
     def cal_features(_smi, _mol):  # set data_column
         return [_smi, _mol, True, feature1(_mol), feature2(_mol)]
 
+    # Then modify obj_fn and column_name to suit your purpose.
     qed_coef = args.coefficient
     sas_coef = 1 - qed_coef
-    # obj_eq = lambda x: qed_coef * x[:, 4] - sas_coef * x[:, 3]
-    obj_eq = lambda x: qed_coef * x[:, 4] + sas_coef * x[:, 3]
+    obj_fn = lambda x: qed_coef * x[:, 4] - sas_coef * x[:, 3]
 
+    #            SMILES / feature1 / feature2 / obj_fn
     column_name = ["SMILES", "SAS", "QED", "TARGET"]
 
-# -------------------------------------------------------- #
-# And also, please find '@F'. Modify your feature names
 # -------------------------------------------------------- #
 
 
@@ -283,13 +300,12 @@ def init_bank(file_name, nbank=None, nsmiles=None, rseed=None):
 
     for i, j in enumerate(bank[:, 0]):
         mol = Chem.MolFromSmiles(j)
-        bank[i, 3] = feature1a(mol)
-        bank[i, 4] = feature2(mol)
         bank[i, 1] = mol
         Chem.Kekulize(mol)
         bank[i, 0] = Chem.MolToSmiles(mol,
                                       kekuleSmiles=True,
                                       isomericSmiles=False)
+        bank[i, 3:] = cal_features(j, mol)[3:]
 
     return bank
 
@@ -297,7 +313,7 @@ def init_bank(file_name, nbank=None, nsmiles=None, rseed=None):
 def prepare_seed(solutions, seed):
 
     solutions = solutions[np.where(solutions[:, 2] == True)]  # 사용 가능한 것이 True
-    x = np.argsort(obj_eq(solutions))
+    x = np.argsort(obj_fn(solutions))
     solutions = x[::-1]
 
     # shuffled_index = np.random.permutation(len(true_solutions))
@@ -563,7 +579,7 @@ def prepare_child(seed,
 
 def prepare_local_child(_smi, nReplace=10, nAdd=10, nRemove=10):
     _mol = Chem.MolFromSmiles(_smi)
-    update_solution = [cal_features(_smi, _mol)]  # @F modifiy feature LOCAL
+    update_solution = [cal_features(_smi, _mol)]
 
     # REPLACE ###
     q = 0
@@ -616,8 +632,8 @@ def prepare_local_child(_smi, nReplace=10, nAdd=10, nRemove=10):
 
 def update_bank(child_solutions, local_opt=False):
     cnt_replace = 0
-    bank_min = np.min(obj_eq(bank))
-    child_solutions = child_solutions[obj_eq(child_solutions) > bank_min]
+    bank_min = np.min(obj_fn(bank))
+    child_solutions = child_solutions[obj_fn(child_solutions) > bank_min]
 
     if len(child_solutions) == 0:
         raise PermissionError("child solutions 가 없습니다 !")
@@ -625,7 +641,7 @@ def update_bank(child_solutions, local_opt=False):
     for i in range(len(child_solutions)):
         if local_opt:
             local_solutions = prepare_local_child(child_solutions[i, 0])
-            x = np.argmax(obj_eq(local_solutions))
+            x = np.argmax(obj_fn(local_solutions))
             fps1 = get_fp(local_solutions[x, 1])
         else:
             fps1 = get_fp(child_solutions[i, 1])
@@ -641,29 +657,29 @@ def update_bank(child_solutions, local_opt=False):
 
         if local_opt:
             if (1 - max_similarity) < dcut:
-                if obj_eq(local_solutions[x:x + 1]) > obj_eq(
+                if obj_fn(local_solutions[x:x + 1]) > obj_fn(
                         bank[max_n:max_n + 1]):
                     bank[max_n] = local_solutions[x:x + 1]
                     cnt_replace += 1
             else:
-                _min = np.argmin(obj_eq(bank))
-                if (max_similarity < 0.98) and (obj_eq(bank[_min:_min + 1]) <
+                _min = np.argmin(obj_fn(bank))
+                if (max_similarity < 0.98) and (obj_fn(bank[_min:_min + 1]) <
                                                 final_avg.mean()):
-                    if obj_eq(local_solutions[x:x + 1]) > obj_eq(
+                    if obj_fn(local_solutions[x:x + 1]) > obj_fn(
                             bank[_min:_min + 1]):
                         bank[_min] = local_solutions[x:x + 1]
                         cnt_replace += 1
         else:
             if (1 - max_similarity) < dcut:
-                if obj_eq(child_solutions[i:i + 1]) > obj_eq(
+                if obj_fn(child_solutions[i:i + 1]) > obj_fn(
                         bank[max_n:max_n + 1]):
                     bank[max_n] = child_solutions[i]
                     cnt_replace += 1
             else:
-                _min = np.argmin(obj_eq(bank))
-                if (max_similarity < 0.98) and (obj_eq(bank[_min:_min + 1]) <
+                _min = np.argmin(obj_fn(bank))
+                if (max_similarity < 0.98) and (obj_fn(bank[_min:_min + 1]) <
                                                 final_avg.mean()):
-                    if obj_eq(child_solutions[i:i + 1]) > obj_eq(
+                    if obj_fn(child_solutions[i:i + 1]) > obj_fn(
                             bank[_min:_min + 1]):
                         bank[_min] = child_solutions[i]
                         cnt_replace += 1
@@ -678,9 +694,8 @@ if __name__ == "__main__":
 
     R_d = 10**(np.log10(2 / target_value) / int(target_round))
 
-    # @@
-    nbank = args.bank_size # number of bank conformations
-    nseed = args.seed_size # number of seeds(mating) per iteration
+    nbank = args.bank_size  # number of bank conformations
+    nseed = args.seed_size  # number of seeds(mating) per iteration
     max_repeat = args.max_round
 
     total_time = ChkTime()
@@ -696,7 +711,7 @@ if __name__ == "__main__":
 
     first_bank = bank
 
-    origin_avg = obj_eq(bank)
+    origin_avg = obj_fn(bank)
 
     plot_list = []
 
@@ -789,7 +804,7 @@ if __name__ == "__main__":
                     f"      {time_child:6.1f}       {time_update:6.1f}    {n_replace:7}     {n_eval}\n"
                 )
 
-        final_avg = obj_eq(bank)
+        final_avg = obj_fn(bank)
 
         with open(f"message.log", "a") as log_f:
             log_f.write(
@@ -822,7 +837,7 @@ if __name__ == "__main__":
                        header=False,
                        index=False)
 
-    df = pd.DataFrame(final_bank, columns=column_name)  # @Find
+    df = pd.DataFrame(final_bank, columns=column_name)
     df.to_csv(f"final_bank_{R_d:.5f}_{args.coefficient:.3f}.csv", index=False)
 
     # log_f.close()

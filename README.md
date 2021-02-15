@@ -31,10 +31,22 @@ conda install pandas numpy
 
 ## Quickstart
 ### 0. Prepare dataset
+Prepare a SMILES file in CSV format. **The first column must be SMILES.**  
+(Contains headers, It doesn't have to be just only SMILES.)
+```
+SMILES
+CCN(CC)CCN(C(=O)c1ccc(CCC(F)(F)F)cc1)[C@H]1CCS(=O)(=O)C1
+C[C@@H](C(=O)N(C)C)N1[C@H]2CC[C@H]1CC(NC(=O)C1C(C)(C)C1(C)C)C2
+CCOc1cc(N2C[C@@H]3C(NC(=O)c4ccn(C)n4)[C@H]3C2)ncn1
+O=C(NC[C@@H](CO)Cc1cccnc1)c1ccnc(OC2CCC2)c1
+O=C([C@@H]1C[C@H]1c1cccnc1)N1CCC(O)(CNCc2ccccn2)CC1
+O=C(CCN1C(=O)[C@H]2CCCC[C@@H]2C1=O)NC1CCN(CC(F)(F)F)CC1
+...
+```
 
 ### 1. Run MolFinder algorithm
 ```
-molfinder -i some_data
+./molfinder -i sample.csv --max-round 5
 ```
 
 ## Parameters of MolFinder
@@ -49,22 +61,42 @@ molfinder -i some_data
 * `--max-round`: (`int`, 150) The maximum number of round
 * `-cvg, --convergent-round`: (`int`, 150) Determines how many rounds the Dcut will converge
   
-* `-c, --coefficient`: (`float`, 0.96) Coefficient of objective function
+* `-c, --coefficient`: (`float`, 0.9) Coefficient of objective function
 * `--target`: (`SMILES: str`, None) Target molecule 
 
 * `-fp, --fp-method`: (`str`, rdkit) Fingerprint method; Morgan or RDKit (default)
 
 * `-v, --verbosity`: Print RDKit Error message.
 
-* Parameters of paper results
 ```shell
+* Parameters of paper results
 molfinder -r 12345678 --bank-size 1000 --seed-size 600 -dist 0.90 -c 0.994
 ```
 
 ## Set objective fucntion
+1. Find `@@FEATURES` in `molfinder`, Set your features.
+2. Find `@@REWARD` in `molfinder`, Modifiy your objective function.
 
+## Component of MolFinder
+```
+MolFinder Algorithm
+├── molfinder
+│   ├── cal_avg_dist
+│   ├── prepare_seed
+│   ├── prepare_child
+|   │   └── Crossover and Mutations from ModSMI
+│   └── update_bank
+└── ModSMI.py
+    ├── tight_rm_branch
+    ├── prepare_rigid_crossover
+    ├── replace_atom
+    ├── add_atom
+    └── delete_atom
+```
 
 ## References
 
 * paper: In progress..
 
+---
+This is my first code and was mainly written in February 2020. There are many drawbacks, but I keep learning and trying.
