@@ -69,8 +69,8 @@ O=C(CCN1C(=O)[C@H]2CCCC[C@@H]2C1=O)NC1CCN(CC(F)(F)F)CC1
 * `-v, --verbosity`: Print RDKit Error message.
 
 ```shell
-* Parameters of paper results
-molfinder -r 12345678 --bank-size 1000 --seed-size 600 -dist 0.90 -c 0.994
+# Parameters of paper results
+molfinder -r 12345678 --bank-size 1000 --seed-size 600 -dist 0.90 -c 0.994 -i sample.csv
 ```
 
 ## Set objective fucntion
