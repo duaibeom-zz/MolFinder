@@ -96,7 +96,7 @@ MolFinder Algorithm
 
 ## References
 
-* paper: In progress..
+* paper: https://doi.org/10.1186/s13321-021-00501-7
 
 ---
 This is my first code and was mainly written in February 2020. There are many drawbacks, but I keep learning and trying.
